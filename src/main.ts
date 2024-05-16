@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 import { Env } from "@(-.-)/env";
 import * as dynamodb from "@aws-sdk/client-dynamodb";
 import * as sqs from "@aws-sdk/client-sqs";
