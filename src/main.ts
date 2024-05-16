@@ -7,6 +7,8 @@ import { chunk } from "lodash-es";
 import pMap from "p-map";
 import yargs from "yargs";
 import { z } from "zod";
+import os from "os";
+import process from "process";
 
 const env = Env(
   z.object({
@@ -151,13 +153,13 @@ yargs(process.argv.slice(2))
             );
           }, 15000);
           console.log("Command to run:", ...command);
-          await updateTaskStatusInDynamoDB(ctx, job.id, body.id, "RUNNING");
+          await updateTaskStatusInDynamoDB(ctx, job.id, body.id, "RUNNING", true);
           try {
             await execa(command[0], command.slice(1), { stdio: "inherit" });
-            await updateTaskStatusInDynamoDB(ctx, job.id, body.id, "COMPLETED");
+            await updateTaskStatusInDynamoDB(ctx, job.id, body.id, "COMPLETED", false);
           } catch (error) {
             console.error("Error running command:", error);
-            await updateTaskStatusInDynamoDB(ctx, job.id, body.id, "FAILED");
+            await updateTaskStatusInDynamoDB(ctx, job.id, body.id, "FAILED", false);
           } finally {
             clearInterval(visibilityTimeoutHandle);
             await sqsClient.send(
@@ -276,8 +278,14 @@ async function updateTaskStatusInDynamoDB(
   { dynamodbClient }: Context,
   jobId: string,
   taskId: string,
-  status: string
+  status: string,
+  isStart: boolean
 ) {
+  const workerId = process.env.PARALLELIZER_WORKER_ID || os.hostname();
+  const timestamp = new Date().toISOString();
+  const updateExpression = isStart
+    ? "set #status = :status, #startedAt = :timestamp, #workerId = :workerId"
+    : "set #status = :status, #finishedAt = :timestamp, #workerId = :workerId";
   await dynamodbClient.send(
     new dynamodb.UpdateItemCommand({
       TableName: env.PARALLELIZER_DYNAMODB_TABLE,
@@ -285,12 +293,17 @@ async function updateTaskStatusInDynamoDB(
         TaskListId: { S: jobId },
         TaskId: { S: taskId },
       },
-      UpdateExpression: "set #status = :status",
+      UpdateExpression: updateExpression,
       ExpressionAttributeNames: {
         "#status": "Status",
+        "#startedAt": "StartedAt",
+        "#finishedAt": "FinishedAt",
+        "#workerId": "WorkerId",
       },
       ExpressionAttributeValues: {
         ":status": { S: status },
+        ":timestamp": { S: timestamp },
+        ":workerId": { S: workerId },
       },
     })
   );
