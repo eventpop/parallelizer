@@ -68,14 +68,19 @@ yargs(process.argv.slice(2))
 
       const queueUrl = await ensureQueueCreated(ctx, job.id);
       const statuses = await getPreviouslyRunTaskStatuses(ctx, job.id);
+
       const statusItems = statuses.Items ?? [];
       console.log("Number of tasks previously run:", statusItems.length);
 
+      const completedTaskIds = new Set(
+        statusItems
+          .filter((item) => item.Status.S === "COMPLETED")
+          .map((item) => item.TaskId.S)
+      );
+      console.log("Number of tasks already completed:", completedTaskIds.size);
+
       const tasksToEnqueue = job.tasks.filter(
-        (task) =>
-          !statusItems.find(
-            (item) => item.TaskId.S === task.id && item.Status.S === "COMPLETED"
-          )
+        (task) => !completedTaskIds.has(task.id)
       );
       console.log("Number of tasks to enqueue:", tasksToEnqueue.length);
 
