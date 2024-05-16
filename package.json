@@ -1,0 +1,22 @@
+{
+  "dependencies": {
+    "@(-.-)/env": "^0.3.2",
+    "@aws-sdk/client-dynamodb": "^3.525.0",
+    "@aws-sdk/client-sqs": "^3.425.0",
+    "execa": "^8.0.1",
+    "lodash-es": "^4.17.21",
+    "p-map": "^6.0.0",
+    "yargs": "^17.7.2",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "@tsconfig/node18": "^18.2.2",
+    "@types/lodash-es": "^4.17.9",
+    "@types/node": "18.x",
+    "@types/yargs": "^17.0.26",
+    "tsup": "^7.2.0",
+    "tsx": "^3.13.0",
+    "typescript": "^5.2.2"
+  },
+  "type": "module"
+}
