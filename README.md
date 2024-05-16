@@ -14,4 +14,4 @@ To set up the project, ensure you have `pnpm` installed on your system. Clone th
 - Comprehensive logging and monitoring of task execution.
 
 ## Note
-This project uses `pnpm` for package management to ensure efficient handling of node modules and dependencies.
+This project uses `pnpm` for package management to ensure efficient handling of node modules and dependencies. It is designed to work with Node.js version 20.
