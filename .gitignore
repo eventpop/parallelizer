@@ -1,4 +1,3 @@
-
 # created by git-ignore
 # Logs
 logs
@@ -47,3 +46,4 @@ Icon
 /api/
 /tmp/
 tsdoc-metadata.json
+dist/
