@@ -18,5 +18,9 @@
     "tsx": "^3.13.0",
     "typescript": "^5.2.2"
   },
-  "type": "module"
+  "type": "module",
+  "scripts": {
+    "build": "tsup src/main.ts --format esm --sourcemap",
+    "dev": "tsup src/main.ts --format esm --sourcemap --watch"
+  }
 }
