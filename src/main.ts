@@ -143,6 +143,9 @@ yargs(process.argv.slice(2))
       );
       const queueUrl = queueUrlResponse.QueueUrl!;
       let nextNumber = 1;
+      let passed = 0;
+      let failed = 0;
+      const totalDurationTracker = createDurationTracker();
 
       while (true) {
         const receiveMessageResponse = await sqsClient.send(
@@ -201,10 +204,16 @@ yargs(process.argv.slice(2))
             );
             const duration = durationTracker.formatDuration();
             console.log(`Task ${body.id} completed in ${duration}s`);
+            passed++;
           } catch (error) {
             const duration = durationTracker.formatDuration();
             console.log(`Task ${body.id} failed in ${duration}s`);
+            console.log(
+              `::error title=${body.displayName} (${body.id}) failed::${error}`
+            );
             console.error("Error running command:", error);
+            process.exitCode = 1;
+            failed++;
             await updateTaskStatusInDynamoDB(
               ctx,
               job.id,
@@ -243,6 +252,14 @@ yargs(process.argv.slice(2))
           await new Promise((resolve) => setTimeout(resolve, 1000));
         }
       }
+
+      const totalDuration = totalDurationTracker.formatDuration();
+      console.log();
+      console.log("--- Summary ---");
+      console.log("Total tasks processed:", passed + failed);
+      console.log("Total duration:", totalDuration + "s");
+      console.log("Number of tasks passed:", passed);
+      console.log("Number of tasks failed:", failed);
     }
   )
   .parse();
