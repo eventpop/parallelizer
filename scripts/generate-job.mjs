@@ -1,5 +1,6 @@
-import { writeFileSync } from "fs";
+import { mkdirSync, writeFileSync } from "fs";
 
+mkdirSync("tmp", { recursive: true });
 writeFileSync(
   "tmp/job.json",
   JSON.stringify({
@@ -9,7 +10,5 @@ writeFileSync(
       id: `task-${i}`,
       displayName: `Task ${i}`,
     })),
-    worker: "echo",
-    workerArgs: ["running", "task", "with", "id"],
   })
 );

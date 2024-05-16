@@ -4,11 +4,11 @@ import * as sqs from "@aws-sdk/client-sqs";
 import { execa } from "execa";
 import fs from "fs";
 import { chunk } from "lodash-es";
+import os from "os";
 import pMap from "p-map";
+import process from "process";
 import yargs from "yargs";
 import { z } from "zod";
-import os from "os";
-import process from "process";
 
 const env = Env(
   z.object({
@@ -68,12 +68,17 @@ yargs(process.argv.slice(2))
 
       const queueUrl = await ensureQueueCreated(ctx, job.id);
       const statuses = await getPreviouslyRunTaskStatuses(ctx, job.id);
+      const statusItems = statuses.Items ?? [];
+      console.log("Number of tasks previously run:", statusItems.length);
+
       const tasksToEnqueue = job.tasks.filter(
         (task) =>
-          !statuses.Items!.find(
+          !statusItems.find(
             (item) => item.TaskId.S === task.id && item.Status.S === "COMPLETED"
           )
       );
+      console.log("Number of tasks to enqueue:", tasksToEnqueue.length);
+
       const chunks = chunk(tasksToEnqueue, 10);
       await pMap(
         chunks,
@@ -153,13 +158,31 @@ yargs(process.argv.slice(2))
             );
           }, 15000);
           console.log("Command to run:", ...command);
-          await updateTaskStatusInDynamoDB(ctx, job.id, body.id, "RUNNING", true);
+          await updateTaskStatusInDynamoDB(
+            ctx,
+            job.id,
+            body.id,
+            "RUNNING",
+            true
+          );
           try {
             await execa(command[0], command.slice(1), { stdio: "inherit" });
-            await updateTaskStatusInDynamoDB(ctx, job.id, body.id, "COMPLETED", false);
+            await updateTaskStatusInDynamoDB(
+              ctx,
+              job.id,
+              body.id,
+              "COMPLETED",
+              false
+            );
           } catch (error) {
             console.error("Error running command:", error);
-            await updateTaskStatusInDynamoDB(ctx, job.id, body.id, "FAILED", false);
+            await updateTaskStatusInDynamoDB(
+              ctx,
+              job.id,
+              body.id,
+              "FAILED",
+              false
+            );
           } finally {
             clearInterval(visibilityTimeoutHandle);
             await sqsClient.send(
@@ -283,9 +306,8 @@ async function updateTaskStatusInDynamoDB(
 ) {
   const workerId = process.env.PARALLELIZER_WORKER_ID || os.hostname();
   const timestamp = new Date().toISOString();
-  const updateExpression = isStart
-    ? "set #status = :status, #startedAt = :timestamp, #workerId = :workerId"
-    : "set #status = :status, #finishedAt = :timestamp, #workerId = :workerId";
+  const updateExpression =
+    "set #status = :status, #timestamp = :timestamp, #workerId = :workerId";
   await dynamodbClient.send(
     new dynamodb.UpdateItemCommand({
       TableName: env.PARALLELIZER_DYNAMODB_TABLE,
@@ -296,8 +318,7 @@ async function updateTaskStatusInDynamoDB(
       UpdateExpression: updateExpression,
       ExpressionAttributeNames: {
         "#status": "Status",
-        "#startedAt": "StartedAt",
-        "#finishedAt": "FinishedAt",
+        "#timestamp": isStart ? "StartedAt" : "FinishedAt",
         "#workerId": "WorkerId",
       },
       ExpressionAttributeValues: {
