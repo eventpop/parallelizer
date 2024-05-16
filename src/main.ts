@@ -27,7 +27,7 @@ const TaskListFile = z.object({
     .string()
     .describe(
       "Unique ID of the task list. " +
-        "Differenct CI workflow runs should have different queue names. " +
+        "Different CI workflow runs should have different queue names. " +
         "This ID can be reused when retrying a failed workflow run " +
         "(previously-complete tasks will be skipped)."
     ),
@@ -153,7 +153,11 @@ yargs(process.argv.slice(2))
         if (receiveMessageResponse.Messages?.length) {
           const message = receiveMessageResponse.Messages[0];
           const body = Task.parse(JSON.parse(message.Body!));
-          const taskCompletionStatus = await checkTaskCompletionStatus(ctx, job.id, body.id);
+          const taskCompletionStatus = await checkTaskCompletionStatus(
+            ctx,
+            job.id,
+            body.id
+          );
           if (taskCompletionStatus === "COMPLETED") {
             console.log(`Task ${body.id} already completed, skipping.`);
             continue;
