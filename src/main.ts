@@ -148,6 +148,11 @@ yargs(process.argv.slice(2))
         if (receiveMessageResponse.Messages?.length) {
           const message = receiveMessageResponse.Messages[0];
           const body = Task.parse(JSON.parse(message.Body!));
+          const taskCompletionStatus = await checkTaskCompletionStatus(ctx, job.id, body.id);
+          if (taskCompletionStatus === "COMPLETED") {
+            console.log(`Task ${body.id} already completed, skipping.`);
+            continue;
+          }
           const command = [...args.worker, body.id];
           let visibilityTimeoutHandle = setInterval(async () => {
             await updateMessageVisibilityTimeout(
@@ -295,6 +300,23 @@ async function getPreviouslyRunTaskStatuses(
     })
   );
   return response;
+}
+
+async function checkTaskCompletionStatus(
+  { dynamodbClient }: Context,
+  jobId: string,
+  taskId: string
+): Promise<string> {
+  const response = await dynamodbClient.send(
+    new dynamodb.GetItemCommand({
+      TableName: env.PARALLELIZER_DYNAMODB_TABLE,
+      Key: {
+        TaskListId: { S: jobId },
+        TaskId: { S: taskId },
+      },
+    })
+  );
+  return response.Item?.Status?.S || "PENDING";
 }
 
 async function updateTaskStatusInDynamoDB(
