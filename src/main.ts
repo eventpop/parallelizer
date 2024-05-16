@@ -142,6 +142,7 @@ yargs(process.argv.slice(2))
         })
       );
       const queueUrl = queueUrlResponse.QueueUrl!;
+      let nextNumber = 1;
 
       while (true) {
         const receiveMessageResponse = await sqsClient.send(
@@ -159,20 +160,27 @@ yargs(process.argv.slice(2))
             job.id,
             body.id
           );
+          const title = `${nextNumber++}. ${body.displayName} (${body.id})`;
           if (taskCompletionStatus === "COMPLETED") {
-            console.log(`Task ${body.id} already completed, skipping.`);
+            console.log(`${title} - already completed, skipping.`);
             continue;
           }
           const command = [...args.worker, body.id];
           let visibilityTimeoutHandle = setInterval(async () => {
-            await updateMessageVisibilityTimeout(
-              sqsClient,
-              queueUrl,
-              message.ReceiptHandle!,
-              30
-            );
+            try {
+              await updateMessageVisibilityTimeout(
+                sqsClient,
+                queueUrl,
+                message.ReceiptHandle!,
+                30
+              );
+            } catch (error) {
+              console.error(
+                "Error updating message visibility timeout:",
+                error
+              );
+            }
           }, 15000);
-          console.log("Command to run:", ...command);
           await updateTaskStatusInDynamoDB(
             ctx,
             job.id,
@@ -180,6 +188,8 @@ yargs(process.argv.slice(2))
             "RUNNING",
             true
           );
+          console.log(`::group::${title}`);
+          const durationTracker = createDurationTracker();
           try {
             await execa(command[0], command.slice(1), { stdio: "inherit" });
             await updateTaskStatusInDynamoDB(
@@ -189,7 +199,11 @@ yargs(process.argv.slice(2))
               "COMPLETED",
               false
             );
+            const duration = durationTracker.formatDuration();
+            console.log(`Task ${body.id} completed in ${duration}s`);
           } catch (error) {
+            const duration = durationTracker.formatDuration();
+            console.log(`Task ${body.id} failed in ${duration}s`);
             console.error("Error running command:", error);
             await updateTaskStatusInDynamoDB(
               ctx,
@@ -199,6 +213,7 @@ yargs(process.argv.slice(2))
               false
             );
           } finally {
+            console.log(`::endgroup::`);
             clearInterval(visibilityTimeoutHandle);
             await sqsClient.send(
               new sqs.DeleteMessageCommand({
@@ -241,6 +256,16 @@ function createContext(): Context {
   return {
     dynamodbClient: new dynamodb.DynamoDBClient({}),
     sqsClient: new sqs.SQSClient({}),
+  };
+}
+
+function createDurationTracker() {
+  const start = Date.now();
+  return {
+    formatDuration: () => {
+      const end = Date.now();
+      return ((end - start) / 1000).toFixed(2);
+    },
   };
 }
 
