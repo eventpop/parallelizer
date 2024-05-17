@@ -184,13 +184,7 @@ yargs(process.argv.slice(2))
               );
             }
           }, 15000);
-          await updateTaskStatusInDynamoDB(
-            ctx,
-            job.id,
-            body.id,
-            "RUNNING",
-            true
-          );
+          await updateTaskStatusInDynamoDB(ctx, job.id, body, "RUNNING", true);
           console.log(`::group::${title}`);
           const durationTracker = createDurationTracker();
           try {
@@ -198,7 +192,7 @@ yargs(process.argv.slice(2))
             await updateTaskStatusInDynamoDB(
               ctx,
               job.id,
-              body.id,
+              body,
               "COMPLETED",
               false
             );
@@ -217,7 +211,7 @@ yargs(process.argv.slice(2))
             await updateTaskStatusInDynamoDB(
               ctx,
               job.id,
-              body.id,
+              body,
               "FAILED",
               false
             );
@@ -374,32 +368,45 @@ async function checkTaskCompletionStatus(
 async function updateTaskStatusInDynamoDB(
   { dynamodbClient }: Context,
   jobId: string,
-  taskId: string,
+  task: z.infer<typeof Task>,
   status: string,
   isStart: boolean
 ) {
   const workerId = process.env.PARALLELIZER_WORKER_ID || os.hostname();
   const timestamp = new Date().toISOString();
-  const updateExpression =
-    "set #status = :status, #timestamp = :timestamp, #workerId = :workerId";
+  let updateExpression =
+    "set #status = :status, #taskDisplayName = :taskDisplayName, #timestamp = :timestamp, #workerId = :workerId";
+  let expressionAttributeNames: Record<string, string> = {
+    "#status": "Status",
+    "#taskDisplayName": "TaskDisplayName",
+    "#timestamp": isStart ? "StartedAt" : "FinishedAt",
+    "#workerId": "WorkerId",
+  };
+  let expressionAttributeValues: Record<string, dynamodb.AttributeValue> = {
+    ":status": { S: status },
+    ":taskDisplayName": { S: task.displayName },
+    ":timestamp": { S: timestamp },
+    ":workerId": { S: workerId },
+  };
+
+  if (isStart) {
+    updateExpression +=
+      ", #attemptCount = if_not_exists(#attemptCount, :zero) + :inc";
+    expressionAttributeNames["#attemptCount"] = "AttemptCount";
+    expressionAttributeValues[":zero"] = { N: "0" };
+    expressionAttributeValues[":inc"] = { N: "1" };
+  }
+
   await dynamodbClient.send(
     new dynamodb.UpdateItemCommand({
       TableName: env.PARALLELIZER_DYNAMODB_TABLE,
       Key: {
         TaskListId: { S: jobId },
-        TaskId: { S: taskId },
+        TaskId: { S: task.id },
       },
       UpdateExpression: updateExpression,
-      ExpressionAttributeNames: {
-        "#status": "Status",
-        "#timestamp": isStart ? "StartedAt" : "FinishedAt",
-        "#workerId": "WorkerId",
-      },
-      ExpressionAttributeValues: {
-        ":status": { S: status },
-        ":timestamp": { S: timestamp },
-        ":workerId": { S: workerId },
-      },
+      ExpressionAttributeNames: expressionAttributeNames,
+      ExpressionAttributeValues: expressionAttributeValues,
     })
   );
 }
