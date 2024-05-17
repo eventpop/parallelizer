@@ -130,6 +130,7 @@ yargs(process.argv.slice(2))
             VisibilityTimeout: 30,
           })
         );
+        let errorMessage = "";
         if (receiveMessageResponse.Messages?.length) {
           const message = receiveMessageResponse.Messages[0];
           const body = Task.parse(JSON.parse(message.Body!));
@@ -163,7 +164,10 @@ yargs(process.argv.slice(2))
           console.log(`::group::${title}`);
           const durationTracker = createDurationTracker();
           try {
-            await execa(command[0], command.slice(1), { stdio: "inherit" });
+            await execa(command[0], command.slice(1), {
+              stdio: "inherit",
+              env: { PARALLELIZER_TASK_ID: body.id },
+            });
             await updateTaskStatusInDynamoDB(
               ctx,
               job.id,
@@ -177,9 +181,7 @@ yargs(process.argv.slice(2))
           } catch (error) {
             const duration = durationTracker.formatDuration();
             console.log(`Task ${body.id} failed in ${duration}s`);
-            console.log(
-              `::error title=${body.displayName} (${body.id}) failed::${error}`
-            );
+            errorMessage = `::error title=${body.displayName} (${body.id}) failed::${error}`;
             console.error("Error running command:", error);
             process.exitCode = 1;
             failed++;
@@ -192,6 +194,9 @@ yargs(process.argv.slice(2))
             );
           } finally {
             console.log(`::endgroup::`);
+            if (errorMessage) {
+              console.log(errorMessage);
+            }
             clearInterval(visibilityTimeoutHandle);
             await sqsClient.send(
               new sqs.DeleteMessageCommand({

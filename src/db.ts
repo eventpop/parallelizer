@@ -1,5 +1,4 @@
 import * as dynamodb from "@aws-sdk/client-dynamodb";
-import os from "os";
 import { z } from "zod";
 import { Context } from "./createContext";
 import { env } from "./env";
@@ -84,7 +83,7 @@ async function updateTaskStatusInDynamoDB(
   status: string,
   isStart: boolean
 ) {
-  const workerId = process.env.PARALLELIZER_WORKER_ID || os.hostname();
+  const workerId = env.PARALLELIZER_WORKER_ID;
   const timestamp = new Date().toISOString();
   let updateExpression =
     "set #status = :status, #taskDisplayName = :taskDisplayName, #timestamp = :timestamp, #workerId = :workerId";
