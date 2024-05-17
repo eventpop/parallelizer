@@ -380,8 +380,26 @@ async function updateTaskStatusInDynamoDB(
 ) {
   const workerId = process.env.PARALLELIZER_WORKER_ID || os.hostname();
   const timestamp = new Date().toISOString();
-  const updateExpression =
+  let updateExpression =
     "set #status = :status, #timestamp = :timestamp, #workerId = :workerId";
+  let expressionAttributeNames = {
+    "#status": "Status",
+    "#timestamp": isStart ? "StartedAt" : "FinishedAt",
+    "#workerId": "WorkerId",
+  };
+  let expressionAttributeValues = {
+    ":status": { S: status },
+    ":timestamp": { S: timestamp },
+    ":workerId": { S: workerId },
+  };
+
+  if (isStart) {
+    updateExpression += ", #attemptCount = if_not_exists(#attemptCount, :zero) + :inc";
+    expressionAttributeNames["#attemptCount"] = "AttemptCount";
+    expressionAttributeValues[":zero"] = { N: "0" };
+    expressionAttributeValues[":inc"] = { N: "1" };
+  }
+
   await dynamodbClient.send(
     new dynamodb.UpdateItemCommand({
       TableName: env.PARALLELIZER_DYNAMODB_TABLE,
@@ -390,16 +408,8 @@ async function updateTaskStatusInDynamoDB(
         TaskId: { S: taskId },
       },
       UpdateExpression: updateExpression,
-      ExpressionAttributeNames: {
-        "#status": "Status",
-        "#timestamp": isStart ? "StartedAt" : "FinishedAt",
-        "#workerId": "WorkerId",
-      },
-      ExpressionAttributeValues: {
-        ":status": { S: status },
-        ":timestamp": { S: timestamp },
-        ":workerId": { S: workerId },
-      },
+      ExpressionAttributeNames: expressionAttributeNames,
+      ExpressionAttributeValues: expressionAttributeValues,
     })
   );
 }
