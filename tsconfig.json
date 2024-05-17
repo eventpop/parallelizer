@@ -2,6 +2,8 @@
   "extends": "@tsconfig/node18/tsconfig.json",
   "include": ["src"],
   "compilerOptions": {
-    "noEmit": true
+    "noEmit": true,
+    "module": "ES2022",
+    "moduleResolution": "Bundler"
   }
 }

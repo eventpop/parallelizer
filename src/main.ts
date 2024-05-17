@@ -1,18 +1,21 @@
 #!/usr/bin/env node
+import * as sqs from "@aws-sdk/client-sqs";
 import { execa } from "execa";
 import fs from "fs";
 import { chunk } from "lodash-es";
-import os from "os";
 import pMap from "p-map";
 import process from "process";
 import yargs from "yargs";
-import { z } from "zod";
-import { env } from "./env";
-import { Task, TaskListFile } from "./schema";
 import { Context, createContext } from "./createContext";
 import { createDurationTracker } from "./createDurationTracker";
-import { ensureDynamodbTableCreated, getPreviouslyRunTaskStatuses, checkTaskCompletionStatus, updateTaskStatusInDynamoDB } from "./db";
+import {
+  checkTaskCompletionStatus,
+  ensureDynamodbTableCreated,
+  getPreviouslyRunTaskStatuses,
+  updateTaskStatusInDynamoDB,
+} from "./db";
 import { ensureQueueCreated, updateMessageVisibilityTimeout } from "./queue";
+import { Task, TaskListFile } from "./schema";
 
 yargs(process.argv.slice(2))
   .demandCommand()
