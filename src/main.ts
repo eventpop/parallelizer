@@ -236,4 +236,62 @@ yargs(process.argv.slice(2))
       console.log("Number of tasks failed:", failed);
     }
   )
+  .command(
+    "status",
+    "Check the status of the tasks",
+    {
+      "job-file": {
+        type: "string",
+        demandOption: true,
+        description: "Path to the job file",
+      },
+      "out-file": {
+        type: "string",
+        description:
+          "Path to the output file. If not provided, prints to stdout.",
+      },
+    },
+    async (args) => {
+      const jobFile = args["job-file"];
+      console.log("Reading job file:", jobFile);
+      const jobFileContents = fs.readFileSync(jobFile, "utf-8");
+      const job = TaskListFile.parse(JSON.parse(jobFileContents));
+      console.log("Queue name:", job.id);
+      console.log("Number of tasks:", job.tasks.length);
+      const ctx: Context = createContext();
+      const statuses = await getPreviouslyRunTaskStatuses(ctx, job.id);
+      type Status = {
+        taskId: string;
+        workerId: string;
+        attemptCount: number;
+        startedAt: string;
+        finishedAt?: string;
+        status: string;
+      };
+      const statusMap = new Map<string, Status>();
+      for (const item of statuses.Items ?? []) {
+        statusMap.set(item.TaskId.S!, {
+          taskId: item.TaskId.S!,
+          workerId: item.WorkerId.S!,
+          attemptCount: +(item.AttemptCount?.N || "0"),
+          startedAt: item.StartedAt?.S || "",
+          finishedAt: item.FinishedAt?.S,
+          status: item.Status.S!,
+        });
+      }
+      const result = job.tasks.map((task) => {
+        return {
+          id: task.id,
+          displayName: task.displayName,
+          status: statusMap.get(task.id),
+        };
+      });
+      const out = JSON.stringify(result, null, 2);
+      if (args["out-file"]) {
+        fs.writeFileSync(args["out-file"], out);
+      } else {
+        console.log(out);
+      }
+    }
+  )
   .parse();
