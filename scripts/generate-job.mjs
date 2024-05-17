@@ -6,7 +6,7 @@ writeFileSync(
   JSON.stringify({
     id: "test-" + crypto.randomUUID(),
     displayName: "Test Job",
-    tasks: Array.from({ length: 200 }, (_, i) => ({
+    tasks: Array.from({ length: 50 }, (_, i) => ({
       id: `task-${i}`,
       displayName: `Task ${i}`,
     })),
