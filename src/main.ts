@@ -286,11 +286,23 @@ yargs(process.argv.slice(2))
           status: statusMap.get(task.id),
         };
       });
+      const formatDuration = (status: Status) => {
+        if (!status.startedAt || !status.finishedAt) return "";
+        const startedAt = new Date(status.startedAt).getTime();
+        const finishedAt = new Date(status.finishedAt).getTime();
+        return ((finishedAt - startedAt) / 1000).toFixed(2) + "s";
+      };
+      console.table(
+        result.map((r) => ({
+          id: r.id,
+          status: r.status?.status,
+          workerId: r.status?.workerId,
+          duration: r.status ? formatDuration(r.status) : "",
+        }))
+      );
       const out = JSON.stringify(result, null, 2);
       if (args["out-file"]) {
         fs.writeFileSync(args["out-file"], out);
-      } else {
-        console.log(out);
       }
     }
   )
