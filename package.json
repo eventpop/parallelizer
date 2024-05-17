@@ -23,7 +23,8 @@
   "type": "module",
   "scripts": {
     "build": "tsup src/main.ts --format esm --sourcemap",
-    "dev": "tsup src/main.ts --format esm --sourcemap --watch"
+    "dev": "tsup src/main.ts --format esm --sourcemap --watch",
+    "typecheck": "tsc"
   },
   "packageManager": "pnpm@9.1.1+sha256.9551e803dcb7a1839fdf5416153a844060c7bce013218ce823410532504ac10b",
   "bin": "./dist/main.js",

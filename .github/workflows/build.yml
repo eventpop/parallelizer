@@ -13,6 +13,8 @@ jobs:
           node-version: "20"
       - name: Install dependencies
         run: corepack enable && pnpm install
+      - name: Type Check
+        run: pnpm run typecheck
       - name: Build project
         run: pnpm run build
       - name: Generate version
