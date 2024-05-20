@@ -38,6 +38,12 @@ Additionally, **test grouping** can be done by running multiple test files in a 
 
 ![shard6](https://github.com/eventpop/parallelizer/assets/193136/3ac4ed3a-810a-4f87-a0a7-62d200ddda8e)
 
+## Basic concepts
+
+A **Parallelizer Job** is a collection of _Parallelizer Tasks._ Each parallelizer job has a unique ID, which will be used as the queue ID in SQS. This ID can be reused when retrying a job. This allows completed tasks to be skipped and only the failed tasks to be retried. The ID can be up to 80 characters long and can contain only alphanumeric characters, hyphens, and underscores.
+
+A **Parallelizer Task** represents a testing task. Usually, it is a test file that needs to be run. It can also be a group of test files that are run together. Each task has a unique ID, which is used to identify the task in the queue. The ID can be up to 80 characters long and can contain only alphanumeric characters, hyphens, and underscores.
+
 ## Development
 
 To set up the project, ensure you have `pnpm` installed on your system. Clone the repository and run `pnpm install` to install dependencies. Use the following commands to interact with the project:
