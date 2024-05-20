@@ -12,7 +12,9 @@ Some services and libraries, such as [CircleCI](https://circleci.com/docs/parall
 
 Solving this problem requires using a **task queue** to dynamically assign tasks to workers. This is the approach taken by this project. The task queue is implemented with Amazon SQS and Amazon DynamoDB, so the entire infrastructure is serverless, i.e., no need to pay for idle DB instances/message broker/servers/containers or a fixed subscription fee. This tool is not tied to any specific test framework, so a single queue can be used to parallelize tests across different test frameworks.
 
-To improve the efficiency, tests that would take longer to run should be enqueued first, while tests that are short should be enqueued last (**task ordering**), to further even out the execution time of each worker. Additionally, **test grouping** can be done by making a single task run more than 1 test file, in order to reduce the overhead of starting a new process for each test file.
+To improve the efficiency, tests that would take longer to run should be enqueued first, while tests that are short should be enqueued last (**task ordering**), to further even out the execution time of each worker.
+
+Additionally, **test grouping** can be done by running multiple test files in a single task, in order to reduce the overhead of starting a new process for each test file.
 
 ## Development
 
