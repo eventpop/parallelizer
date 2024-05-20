@@ -10,9 +10,11 @@ At Eventpop, we have many automated tests which are implemented using different 
 
 To speed up the process, they have to be run in parallel.
 
-A simple solution is to separate the tests into smaller groups and run them in parallel (**test sharding**). However, splitting the tests into shards of equal number of test files can lead to imbalance in the execution time of each shard, because the time it takes to run each test file can vary wildly. In our case, some of our test files finish in less than a second, while a few takes about 1 minute. This can lead to some shards finishing their work early and being idle while others are still working.
+A simple solution is to separate the tests into smaller groups and run them in parallel (**test sharding**).
 
 ![shard1](https://github.com/eventpop/parallelizer/assets/193136/88598a5a-af23-45c8-a68e-bf29fbb8bdf8)
+
+However, splitting the tests into shards of equal number of test files can lead to imbalance in the execution time of each shard, because the time it takes to run each test file can vary wildly. In our case, some of our test files finish in less than a second, while a few takes about 1 minute. This can lead to some shards finishing their work early and being idle while others are still working.
 
 Some services and libraries, such as [CircleCI](https://circleci.com/docs/parallelism-faster-jobs/) or [Knapsack](https://github.com/KnapsackPro/knapsack) provides **automatic test splitting.** They analyze the execution time of each test file and tries to distribute them evenly across workers.
 
