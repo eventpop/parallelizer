@@ -1,9 +1,13 @@
 import * as sqs from "@aws-sdk/client-sqs";
+import { env } from "./env";
 
-async function ensureQueueCreated({ sqsClient }: { sqsClient: sqs.SQSClient }, queueId: string) {
+async function ensureQueueCreated(
+  { sqsClient }: { sqsClient: sqs.SQSClient },
+  queueId: string
+) {
   const createQueueResponse = await sqsClient.send(
     new sqs.CreateQueueCommand({
-      QueueName: queueId,
+      QueueName: env.PARALLELIZER_SQS_PREFIX + queueId,
       tags: {
         "ci-parallelizer": "true",
       },

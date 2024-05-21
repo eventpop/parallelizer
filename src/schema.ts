@@ -15,7 +15,6 @@ const TaskListFile = z.object({
         "This ID can be reused when retrying a failed workflow run " +
         "(previously-complete tasks will be skipped)."
     ),
-  displayName: z.string().default(""),
   tasks: z
     .array(Task)
     .describe(

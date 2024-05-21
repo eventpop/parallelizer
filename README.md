@@ -40,9 +40,68 @@ Additionally, **test grouping** can be done by running multiple test files in a 
 
 ## Basic concepts
 
-A **Parallelizer Job** is a collection of _Parallelizer Tasks._ Each parallelizer job has a unique ID, which will be used as the queue ID in SQS. This ID can be reused when retrying a job. This allows completed tasks to be skipped and only the failed tasks to be retried. The ID can be up to 80 characters long and can contain only alphanumeric characters, hyphens, and underscores.
+A **Parallelizer Job** is a collection of _Parallelizer Tasks._ Each parallelizer job has a unique ID, which will be used as the queue ID in SQS. This ID can be reused when retrying a job. This allows completed tasks to be skipped and only the failed tasks to be retried.
 
-A **Parallelizer Task** represents a testing task. Usually, it is a test file that needs to be run. It can also be a group of test files that are run together. Each task has a unique ID, which is used to identify the task in the queue. The ID can be up to 80 characters long and can contain only alphanumeric characters, hyphens, and underscores.
+A **Parallelizer Task** represents a testing task. Usually, it is a test file that needs to be run. It can also be a group of test files that are run together. Each task has a unique ID, which is used to identify the task in the queue.
+
+## Walkthrough
+
+Before starting, run `pnpm install` to install dependencies and `pnpm run build` to compile the project.
+
+### Step 1: Create a Parallelizer Job file
+
+A Parallelizer Job file is a JSON file that contains the list of tasks to be run. The JSON file should have the following properties:
+
+- `id`: The ID of the job. It can contain alphanumeric characters, dashes, and underscores.
+- `tasks`: An array of tasks. Each task should have the following properties:
+  - `id`: The ID of the task. It can contain alphanumeric characters, dashes, and underscores.
+  - `displayName`: The display name of the task. This is used for logging purposes.
+  - `spec`: An object that contains the task specification. This can be anything that is needed to run the task, such as the path to the test file (or test files), the testing framework to use, etc.
+
+To generate a sample job file, run the following command:
+
+```sh
+node scripts/generate-job.mjs
+```
+
+…then look at the `tmp/job.json` file.
+
+### Step 2: Load the job into the queue
+
+Run the following command to load the job into the queue:
+
+```sh
+node dist/main.js prepare --job-file=tmp/job.json
+```
+
+### Step 3: Work on the queue
+
+Run the following command to start working on the queue:
+
+```sh
+node dist/main.js work --job-file=tmp/job.json node scripts/work.mjs
+```
+
+You can run the above command in multiple terminals to simulate multiple workers.
+
+The `work` command consumes tasks from the queue, and runs the worker command specified in the argument with the task ID appended. For example, the above command would run `node scripts/work.mjs <task-id>`. The worker should return a status code of `0` if the task is successful, or a non-zero status code if the task failed.
+
+Note that Parallelizer doesn’t handle retries, so the worker should handle retries as needed.
+
+Additionally, the following environment variables are available to the worker:
+
+- `PARALLELIZER_JOB_ID`: The ID of the job.
+- `PARALLELIZER_TASK_ID`: The ID of the task (same as the task ID passed to the worker command).
+
+### Step 4: Check the task status
+
+Run the following command to check the status of the tasks:
+
+```sh
+node dist/main.js status --job-file=tmp/job.json --out-file=tmp/status.json
+```
+
+A summary table will be printed to the console, and the detailed status of each task will be written to the `tmp/status.json` file.
 
 ## Development
 
@@ -61,5 +120,8 @@ node scripts/generate-job.mjs
 node dist/main.js prepare --job-file=tmp/job.json
 
 # Start a worker (this can be run in multiple terminals to simulate multiple workers)
-node dist/main.js work --job-file=tmp/job.json echo
+node dist/main.js work --job-file=tmp/job.json node scripts/work.mjs
+
+# Check the status of the tasks
+node dist/main.js status --job-file=tmp/job.json --out-file=tmp/status.json
 ```

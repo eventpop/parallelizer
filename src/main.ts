@@ -38,7 +38,7 @@ yargs(process.argv.slice(2))
       console.log("Reading job file:", jobFile);
       const jobFileContents = fs.readFileSync(jobFile, "utf-8");
       const job = TaskListFile.parse(JSON.parse(jobFileContents));
-      console.log("Queue name:", job.id);
+      console.log("Job ID:", job.id);
       console.log("Number of tasks:", job.tasks.length);
       const ctx: Context = createContext();
 
@@ -123,12 +123,12 @@ yargs(process.argv.slice(2))
       console.log("Reading job file:", jobFile);
       const jobFileContents = fs.readFileSync(jobFile, "utf-8");
       const job = TaskListFile.parse(JSON.parse(jobFileContents));
-      console.log("Queue name:", job.id);
+      console.log("Job ID:", job.id);
 
       const sqsClient = new sqs.SQSClient({});
       const queueUrlResponse = await sqsClient.send(
         new sqs.GetQueueUrlCommand({
-          QueueName: job.id,
+          QueueName: env.PARALLELIZER_SQS_PREFIX + job.id,
         })
       );
       const queueUrl = queueUrlResponse.QueueUrl!;
@@ -181,7 +181,10 @@ yargs(process.argv.slice(2))
           try {
             await execa(command[0], command.slice(1), {
               stdio: "inherit",
-              env: { PARALLELIZER_TASK_ID: body.id },
+              env: {
+                PARALLELIZER_TASK_ID: body.id,
+                PARALLELIZER_JOB_ID: job.id,
+              },
             });
             await updateTaskStatusInDynamoDB(
               ctx,
@@ -262,8 +265,7 @@ yargs(process.argv.slice(2))
       },
       "out-file": {
         type: "string",
-        description:
-          "Path to the output file. If not provided, prints to stdout.",
+        description: "Path to the output JSON file.",
       },
     },
     async (args) => {
@@ -271,7 +273,7 @@ yargs(process.argv.slice(2))
       console.log("Reading job file:", jobFile);
       const jobFileContents = fs.readFileSync(jobFile, "utf-8");
       const job = TaskListFile.parse(JSON.parse(jobFileContents));
-      console.log("Queue name:", job.id);
+      console.log("Job ID:", job.id);
       console.log("Number of tasks:", job.tasks.length);
       const ctx: Context = createContext();
       const statuses = await getPreviouslyRunTaskStatuses(ctx, job.id);
