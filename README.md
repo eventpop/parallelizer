@@ -38,6 +38,9 @@ Additionally, **test grouping** can be done by running multiple test files in a 
 
 ![shard6](https://github.com/eventpop/parallelizer/assets/193136/3ac4ed3a-810a-4f87-a0a7-62d200ddda8e)
 
+> [!NOTE]
+> Parallelizer provides a tool for implementing a **task queue** using SQS and DynamoDB. It is up to the consumer to implement **task ordering** and **test grouping** by themselves.
+
 ## Basic concepts
 
 A **Parallelizer Job** is a collection of _Parallelizer Tasks._ Each parallelizer job has a unique ID, which will be used as the queue ID in SQS. This ID can be reused when retrying a job. This allows completed tasks to be skipped and only the failed tasks to be retried.
