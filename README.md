@@ -105,17 +105,15 @@ A summary table will be printed to the console, and the detailed status of each 
 
 ## Environment Variables
 
-The following table lists the environment variables used by Parallelizer, their default values, and descriptions:
+The following table lists the environment variables used by Parallelizer:
 
 | Variable | Default Value | Description |
 |----------|---------------|-------------|
 | `PARALLELIZER_DYNAMODB_TABLE` | `parallelizer` | The DynamoDB table name used for storing task statuses. |
 | `PARALLELIZER_SQS_PREFIX` | `parallelizer_` | The prefix for SQS queue names. |
-| `PARALLELIZER_S3_BUCKET` | *(none)* | The S3 bucket name for storing job files. If not set, S3 storage is not used. |
-| `PARALLELIZER_S3_KEY_PREFIX` | *(empty)* | The prefix for S3 keys when storing job files. |
-| `PARALLELIZER_WORKER_ID` | *(hostname)* | The identifier for the worker node. Defaults to the hostname of the machine. |
-
-These variables allow for customization of the underlying AWS resources used by Parallelizer and can be set to integrate the tool into different environments.
+| `PARALLELIZER_S3_BUCKET` | *(none)* | Provide this environment variable to upload the job file to a S3 bucket when running the `prepare` command. This is provided for convenience for integrating with other tools, but otherwise does not affect the behavior of Parallelizer. (If not set, the job file will not be uploaded to S3.) |
+| `PARALLELIZER_S3_KEY_PREFIX` | *(empty)* | The prefix for S3 keys when storing job files to S3. Only applicable when `PARALLELIZER_S3_BUCKET` is set. |
+| `PARALLELIZER_WORKER_ID` | *(hostname)* | The identifier for the worker node, to help with debugging. The worker ID will be shown in `status` command. Defaults to the hostname of the machine. |
 
 ## Development
 
