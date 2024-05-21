@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import * as s3 from "@aws-sdk/client-s3";
 import * as sqs from "@aws-sdk/client-sqs";
 import { execa } from "execa";
 import fs from "fs";
@@ -14,6 +15,7 @@ import {
   getPreviouslyRunTaskStatuses,
   updateTaskStatusInDynamoDB,
 } from "./db";
+import { env } from "./env";
 import { ensureQueueCreated, updateMessageVisibilityTimeout } from "./queue";
 import { Task, TaskListFile } from "./schema";
 
@@ -59,6 +61,19 @@ yargs(process.argv.slice(2))
         (task) => !completedTaskIds.has(task.id)
       );
       console.log("Number of tasks to enqueue:", tasksToEnqueue.length);
+
+      if (env.PARALLELIZER_S3_BUCKET) {
+        const key = `${env.PARALLELIZER_S3_KEY_PREFIX}${job.id}.json`;
+        await ctx.s3Client.send(
+          new s3.PutObjectCommand({
+            Bucket: env.PARALLELIZER_S3_BUCKET,
+            Key: key,
+            Body: jobFileContents,
+          })
+        );
+        const s3Url = `s3://${env.PARALLELIZER_S3_BUCKET}/${key}`;
+        console.log("Job file saved to S3:", s3Url);
+      }
 
       const chunks = chunk(tasksToEnqueue, 10);
       await pMap(

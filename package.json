@@ -4,6 +4,7 @@
   "dependencies": {
     "@(-.-)/env": "^0.3.2",
     "@aws-sdk/client-dynamodb": "^3.525.0",
+    "@aws-sdk/client-s3": "^3.577.0",
     "@aws-sdk/client-sqs": "^3.425.0",
     "execa": "^8.0.1",
     "lodash-es": "^4.17.21",
@@ -28,5 +29,8 @@
   },
   "packageManager": "pnpm@9.1.1+sha256.9551e803dcb7a1839fdf5416153a844060c7bce013218ce823410532504ac10b",
   "bin": "./dist/main.js",
-  "files": ["src", "dist"]
+  "files": [
+    "src",
+    "dist"
+  ]
 }
