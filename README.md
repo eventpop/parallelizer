@@ -103,6 +103,18 @@ node dist/main.js status --job-file=tmp/job.json --out-file=tmp/status.json
 
 A summary table will be printed to the console, and the detailed status of each task will be written to the `tmp/status.json` file.
 
+## Environment Variables
+
+The following table lists the environment variables used by Parallelizer:
+
+| Variable | Default Value | Description |
+|----------|---------------|-------------|
+| `PARALLELIZER_DYNAMODB_TABLE` | `parallelizer` | The DynamoDB table name used for storing task statuses. |
+| `PARALLELIZER_SQS_PREFIX` | `parallelizer_` | The prefix for SQS queue names. |
+| `PARALLELIZER_S3_BUCKET` | *(none)* | Provide this environment variable to upload the job file to a S3 bucket when running the `prepare` command. This is provided for convenience for integrating with other tools, but otherwise does not affect the behavior of Parallelizer. (If not set, the job file will not be uploaded to S3.) |
+| `PARALLELIZER_S3_KEY_PREFIX` | *(empty)* | The prefix for S3 keys when storing job files to S3. Only applicable when `PARALLELIZER_S3_BUCKET` is set. |
+| `PARALLELIZER_WORKER_ID` | *(hostname)* | The identifier for the worker node, to help with debugging. The worker ID will be shown in `status` command. Defaults to the hostname of the machine. |
+
 ## Development
 
 To set up the project, ensure you have `pnpm` installed on your system. Clone the repository and run `pnpm install` to install dependencies. Use the following commands to interact with the project:
