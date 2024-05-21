@@ -48,6 +48,43 @@ A **Parallelizer Task** represents a testing task. Usually, it is a test file th
 
 Before starting, run `pnpm install` to install dependencies and `pnpm run build` to compile the project.
 
+### Step 0: Set up AWS permissions
+
+Make sure your AWS account/role has the following permissions:
+
+```json
+{
+	"Version": "2012-10-17",
+	"Statement": [
+		{
+			"Sid": "VisualEditor0",
+			"Effect": "Allow",
+			"Action": [
+				"sqs:DeleteMessage",
+				"sqs:GetQueueUrl",
+				"sqs:ChangeMessageVisibility",
+				"sqs:UntagQueue",
+				"sqs:ReceiveMessage",
+				"sqs:SendMessage",
+				"sqs:GetQueueAttributes",
+				"dynamodb:Query",
+				"dynamodb:UpdateItem",
+				"dynamodb:CreateTable",
+				"sqs:TagQueue",
+				"dynamodb:GetItem",
+				"sqs:CreateQueue",
+				"dynamodb:UpdateTable"
+			],
+			"Resource": [
+				"arn:aws:sqs:ap-southeast-1:376829893840:*",
+				"arn:aws:dynamodb:ap-southeast-1:376829893840:table/parallelizer/index/*",
+				"arn:aws:dynamodb:ap-southeast-1:376829893840:table/parallelizer"
+			]
+		}
+	]
+}
+```
+
 ### Step 1: Create a Parallelizer Job file
 
 A Parallelizer Job file is a JSON file that contains the list of tasks to be run. The JSON file should have the following properties:
