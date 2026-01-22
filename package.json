@@ -7,7 +7,7 @@
     "@aws-sdk/client-s3": "^3.577.0",
     "@aws-sdk/client-sqs": "^3.425.0",
     "execa": "^8.0.1",
-    "lodash-es": "^4.17.21",
+    "lodash-es": "^4.17.23",
     "p-map": "^6.0.0",
     "yargs": "^17.7.2",
     "zod": "^3.22.4"
